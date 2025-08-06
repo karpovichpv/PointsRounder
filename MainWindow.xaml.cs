@@ -1,4 +1,8 @@
-﻿using Point = Tekla.Structures.Geometry3d.Point;
+﻿using System;
+using System.Globalization;
+using System.Windows;
+using Tekla.Structures.Model;
+using Tekla.Structures.Model.Operations;
 
 namespace PointsRounder
 {
@@ -7,7 +11,7 @@ namespace PointsRounder
     /// </summary>
     public partial class MainWindow : Window
     {
-        private Model _model = new Model();
+        private readonly Model _model = new Model();
 
         public MainWindow()
         {
@@ -28,11 +32,20 @@ namespace PointsRounder
             }
             catch (Exception ex)
             {
-                int num = (int)MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.Message);
             }
             try
             {
-                ModelObjectEnumerator selectedObjects = new Tekla.Structures.Model.UI.ModelObjectSelector().GetSelectedObjects();
+                string text = this.tb_CPartRound.Text;
+                bool parsingResult = double
+                    .TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double roundFactor);
+                if (!parsingResult)
+                {
+                    throw new Exception($"Input string {text} has invalid format");
+                }
+
+                ModelObjectEnumerator selectedObjects = new Tekla.Structures.Model.UI.ModelObjectSelector()
+                    .GetSelectedObjects();
                 double size = (double)selectedObjects.GetSize();
                 while (selectedObjects.MoveNext())
                 {
@@ -40,27 +53,27 @@ namespace PointsRounder
                     string name = type.Name;
                     if (type.Name == "CustomPart")
                     {
-                        Correct.roundCPartPoints(selectedObjects.Current as CustomPart, (int)Convert.ToInt16(this.tb_CPartRound.Text), str);
+                        Correct.RoundCPartPoints(selectedObjects.Current as CustomPart, roundFactor, str);
                         this._model.CommitChanges();
                     }
                     if (type.Name == "ContourPlate")
                     {
-                        Correct.roundCplatePoints(selectedObjects.Current as ContourPlate, (int)Convert.ToInt16(this.tb_CPartRound.Text), str);
+                        Correct.RoundCplatePoints(selectedObjects.Current as ContourPlate, roundFactor, str);
                         this._model.CommitChanges();
                     }
                     if (type.Name == "Beam")
                     {
-                        Correct.roundBeamPoints(selectedObjects.Current as Beam, (int)Convert.ToInt16(this.tb_CPartRound.Text), str);
+                        Correct.RoundBeamPoints(selectedObjects.Current as Beam, roundFactor, str);
                         this._model.CommitChanges();
                     }
                     if (type.Name == "ControlLine")
                     {
-                        Correct.roundControlLinePoints(selectedObjects.Current as ControlLine, (int)Convert.ToInt16(this.tb_CPartRound.Text), str);
+                        Correct.RoundControlLinePoints(selectedObjects.Current as ControlLine, roundFactor, str);
                         this._model.CommitChanges();
                     }
                     if (type.Name == "PolyBeam")
                     {
-                        Correct.roundPolyBeamPoints(selectedObjects.Current as PolyBeam, (int)Convert.ToInt16(this.tb_CPartRound.Text), str);
+                        Correct.RoundPolyBeamPoints(selectedObjects.Current as PolyBeam, roundFactor, str);
                         this._model.CommitChanges();
                     }
                     if (type.Name == "BooleanPart")
@@ -70,7 +83,7 @@ namespace PointsRounder
                         try
                         {
                             Beam operativePart2 = current.OperativePart as Beam;
-                            Correct.roundBeamPoints(operativePart2, (int)Convert.ToInt16(this.tb_CPartRound.Text), str);
+                            Correct.RoundBeamPoints(operativePart2, roundFactor, str);
                             current.OperativePart = (Tekla.Structures.Model.Part)operativePart2;
                         }
                         catch
@@ -78,7 +91,7 @@ namespace PointsRounder
                         }
                         try
                         {
-                            Correct.roundCplatePoints(operativePart1, (int)Convert.ToInt16(this.tb_CPartRound.Text), str);
+                            Correct.RoundCplatePoints(operativePart1, roundFactor, str);
                             current.OperativePart = (Tekla.Structures.Model.Part)operativePart1;
                         }
                         catch
@@ -90,106 +103,34 @@ namespace PointsRounder
                     if (type.Name == "RebarGroup")
                     {
                         RebarGroup current = selectedObjects.Current as RebarGroup;
-                        Correct.roundRebarGroupStartEndPoints(current, (int)Convert.ToInt16(this.tb_CPartRound.Text), str);
+                        Correct.RoundRebarGroupStartEndPoints(current, roundFactor, str);
                         current.Modify();
                         this._model.CommitChanges();
                     }
                     if (type.Name == "Component")
                     {
-                        Correct.roundComponentInputPoints(selectedObjects.Current as Tekla.Structures.Model.Component, (int)Convert.ToInt16(this.tb_CPartRound.Text), str);
+                        Correct.RoundComponentInputPoints(selectedObjects.Current as Component, roundFactor, str);
                         this._model.CommitChanges();
                     }
                 }
+
                 Operation.DisplayPrompt("Correction DONE!!!");
             }
             catch (Exception ex)
             {
-                int num = (int)MessageBox.Show(ex.Message);
-            }
-        }
-
-        private void Button_Click_Offset(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                ModelObjectEnumerator selectedObjects = new Tekla.Structures.Model.UI.ModelObjectSelector().GetSelectedObjects();
-                while (selectedObjects.MoveNext())
-                {
-                    if (selectedObjects.Current.GetType().Name == "ContourPlate")
-                    {
-                        OffsetElements.OffsetContourPlate(selectedObjects.Current as ContourPlate, -1.0 * Convert.ToDouble(this.tbOffsetValue.Text));
-                        this._model.CommitChanges();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                int num = (int)MessageBox.Show(ex.Message);
+                MessageBox.Show(ex.Message);
             }
         }
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             ModelObjectEnumerator selectedObjects = new Tekla.Structures.Model.UI.ModelObjectSelector().GetSelectedObjects();
-            double size = (double)selectedObjects.GetSize();
             while (selectedObjects.MoveNext())
             {
                 Type type = selectedObjects.Current.GetType();
-                string name = type.Name;
                 if (type.Name == "RebarGroup")
                     this._model.CommitChanges();
             }
-        }
-
-        private void Button_btDrawOpenningSymbol(object sender, RoutedEventArgs e)
-        {
-            Tekla.Structures.Drawing.UI.Picker picker = new DrawingHandler().GetPicker();
-            Tuple<Point, Tekla.Structures.Drawing.ViewBase> tuple1 = picker.PickPoint("Pick Point 1");
-            Tuple<Point, Tekla.Structures.Drawing.ViewBase> tuple2 = picker.PickPoint("Pick Point 1");
-            Point point1 = new Point();
-            Point point2 = new Point();
-            Point point3;
-            Point point4;
-            if (tuple1.Item1.Y < tuple2.Item1.Y)
-            {
-                if (tuple1.Item1.X < tuple2.Item1.X)
-                {
-                    point3 = tuple1.Item1;
-                    point4 = tuple2.Item1;
-                }
-                else
-                {
-                    point3 = new Point(tuple2.Item1.X, tuple1.Item1.Y);
-                    point4 = new Point(tuple1.Item1.X, tuple2.Item1.Y);
-                }
-            }
-            else if (tuple1.Item1.X < tuple2.Item1.X)
-            {
-                point3 = new Point(tuple1.Item1.X, tuple2.Item1.Y);
-                point4 = new Point(tuple2.Item1.X, tuple1.Item1.Y);
-            }
-            else
-            {
-                point3 = tuple2.Item1;
-                point4 = tuple1.Item1;
-            }
-            double num1 = 5.0;
-            double num2 = point4.Y - point3.Y;
-            double num3 = point4.X - point3.X;
-            double num4 = Math.Min(num2 / num1, num3 / num1);
-            Point point5 = new Point(point3.X + num4, point4.Y - num4);
-            Point point6 = new Point(point3.X, point4.Y);
-            PointList pointList = new PointList();
-            pointList.Add(point3);
-            pointList.Add(point6);
-            pointList.Add(point4);
-            pointList.Add(point5);
-            Tekla.Structures.Drawing.Polygon.PolygonAttributes polygonAttributes = new Tekla.Structures.Drawing.Polygon.PolygonAttributes();
-            polygonAttributes.Hatch.Name = "hardware_SOLID";
-            new Tekla.Structures.Drawing.Polygon(tuple1.Item2, pointList)
-            {
-                Attributes = polygonAttributes
-            }.Insert();
         }
     }
 }

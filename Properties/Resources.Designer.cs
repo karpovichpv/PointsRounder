@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace PointsRounder.Properties {
+namespace pk_CoordinateCorrector2025.Properties {
     using System;
     
     
