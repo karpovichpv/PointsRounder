@@ -5,7 +5,7 @@ using Tekla.Structures.Model.Operations;
 
 namespace PointsRounder
 {
-    public class Correct //класс корректировки элементов с плохими координатами
+    public static class Correct //класс корректировки элементов с плохими координатами
     {
         public static void RoundBeamCoord(Beam beam, double rValue) //метод округления координат начала и конца балки до указанной пользователем величины
         {
@@ -39,6 +39,29 @@ namespace PointsRounder
             beam.Modify(); //обновляем балку
 
             StatusBarMessage(beam); //выводим значение об обработке в консоль
+        }
+
+        public static void RoundBrepPoints(Brep brep, double rValue, string coord)
+        {
+            Point roundStartPoint = RoundPoint(new Point(brep.StartPoint), rValue, coord);
+            Point roundEndPoint = RoundPoint(new Point(brep.EndPoint), rValue, coord);
+
+            Point movedStartPoint = brep.StartPoint.GetMovedPoint();
+            Point movedEndPoint = brep.EndPoint.GetMovedPoint();
+            brep.StartPoint = movedStartPoint;
+            brep.EndPoint = movedEndPoint;
+            brep.Modify();
+
+            brep.StartPoint = roundStartPoint;
+            brep.EndPoint = roundEndPoint;
+            brep.Modify();
+
+            StatusBarMessage(brep);
+        }
+
+        private static Point GetMovedPoint(this Point p)
+        {
+            return new Point(p.X + 100, p.Y + 100, p.Z + 100);
         }
 
         public static void RoundCPartPoints(CustomPart cmp, double rValue, string coord)

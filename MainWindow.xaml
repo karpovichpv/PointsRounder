@@ -50,6 +50,9 @@
                 <LineBreak />
                 <Run Text="8. " />
                 <Run Text="Component/Plugin Input Points" />
+                <LineBreak />
+                <Run Text="9. " />
+                <Run Text="Brep" />
             </TextBlock>
             <Button
                 x:Name="bt_RoundElements"

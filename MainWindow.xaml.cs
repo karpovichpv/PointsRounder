@@ -49,12 +49,18 @@ namespace PointsRounder
                 double size = (double)selectedObjects.GetSize();
                 while (selectedObjects.MoveNext())
                 {
+                    ModelObject currentObject = selectedObjects.Current;
                     Type type = selectedObjects.Current.GetType();
                     string name = type.Name;
                     if (type.Name == "CustomPart")
                     {
                         Correct.RoundCPartPoints(selectedObjects.Current as CustomPart, roundFactor, str);
-                        this._model.CommitChanges();
+                        _model.CommitChanges();
+                    }
+                    if (currentObject is Brep brep)
+                    {
+                        Correct.RoundBrepPoints(brep, roundFactor, str);
+
                     }
                     if (type.Name == "ContourPlate")
                     {
